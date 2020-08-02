@@ -1,0 +1,13 @@
+version: "3.7"
+services:
+  redis:
+    image: redis:6.0.3-alpine
+    ports:
+      - "6379:6379"
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    volumes:
+      - ../data/redis:/data
+    restart: always
+volumes:
+  redis:
