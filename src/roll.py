@@ -1,27 +1,25 @@
 from handler import Handler
 import hashlib
+import kv
 import json
 import random
 import re
 
-def _to_key(b):
-    return hashlib.md5(b).digest()
-
 class CommandRegistry:
     def __init__(self, r):
         self.r = r
-        stored_commands = r.get(_to_key(b'commands')) or '{}'
+        stored_commands = r.get(kv.to_key(b'commands')) or '{}'
         self.registry = json.loads(stored_commands)
 
 class RollHandler(Handler):
-    roll_key = _to_key(b'roll')
+    roll_key = kv.to_key(b'roll')
 
     def __init__(self, r, commands={}):
         self.r = r
         self.registry = CommandRegistry(r)
 
     def accepts(self, message):
-        return (message.content.startswith('!roll')
+        return (message.content.startswith('!roll ')
         or message.content.startswith('!are-we-cursed?')
         or message.content == '!reset-curse')
 

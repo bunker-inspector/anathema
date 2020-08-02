@@ -2,6 +2,7 @@ import discord
 import os
 import redis
 from roll import RollHandler
+from command import CommandHandler
 
 if __name__ == '__main__':
     client = discord.Client()
@@ -12,6 +13,10 @@ if __name__ == '__main__':
     r = redis.Redis(host=redis_host, port=redis_port, db=redis_db)
 
     handlers = [RollHandler(r)]
+
+    command_handler = CommandHandler(r, handlers)
+
+    handlers.append(command_handler)
 
     @client.event
     async def on_ready():
@@ -25,6 +30,7 @@ if __name__ == '__main__':
 
         for handler in handlers:
             if handler.accepts(message):
-                await message.channel.send(handler.get_response(message))
+                response = handler.get_response(message)
+                if response: await message.channel.send(response)
 
     client.run(os.getenv('DISCORD_BOT_TOKEN'))
