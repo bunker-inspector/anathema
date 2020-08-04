@@ -102,7 +102,7 @@ class RollHandler(Handler):
     def get_roll_response(self, message):
         # Remove !roll from content
         reason = None
-        split_command = [x.strip() for x in message.content[5:].split('!')]
+        split_command = [x.strip() for x in message.content[5:].split('!', 1)]
 
         roll_clause = split_command[0]
         if len(split_command) > 1:
@@ -111,12 +111,12 @@ class RollHandler(Handler):
         if not re.match(r'^(\d+[d]\d+|\-?\d+)(\+?(\d+[d]\d+|\-?\d+))*', roll_clause):
             return 'What the _fuck_ was that? Read the goddamned docs.'
 
-        matches = re.findall(r'\+?(\d+[d]\d+|\-?\d+)', message.content)
+        matches = re.findall(r'\+?(\d+[d]\d+|\-?\d+)', roll_clause)
         rolls, mods = self._split_by_format(matches)
         roll_results = [self._roll(roll) for roll in rolls]
 
         results_str = ','.join(map(str, roll_results))
-        response = "{} rolled: `{}".format(message.author.name, results_str)
+        response = "{} rolled: `{}".format(message.author.nick, results_str)
 
         if mods:
             response += " + {}".format(' + '.join(mods))

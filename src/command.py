@@ -48,7 +48,7 @@ class CommandHandler(Handler):
 
         self.r.put(self.command_key, json.dumps(self.commands).encode('UTF-8'))
 
-        return '{} registered command: `!{}` -> `{}`'.format(message.author.name, command_clause, command)
+        return '{} registered command: `!{}` -> `{}`'.format(message.author.nick, command_clause, command)
 
     def process_user_command(self, message):
         command = self._extract_command(message)
