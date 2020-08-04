@@ -5,18 +5,11 @@ import json
 import random
 import re
 
-class CommandRegistry:
-    def __init__(self, r):
-        self.r = r
-        stored_commands = r.get(kv.to_key(b'commands')) or b'{}'
-        self.registry = json.loads(stored_commands.decode('UTF-8'))
-
 class RollHandler(Handler):
     roll_key = kv.to_key(b'roll')
 
     def __init__(self, r, commands={}):
         self.r = r
-        self.registry = CommandRegistry(r)
 
     def accepts(self, message):
         return (message.content.startswith('!roll ')
@@ -41,24 +34,15 @@ class RollHandler(Handler):
 
         return [random.randint(1, die) for _ in range(times)]
 
-    def _get_roll_potential(self, rolls):
-        roll_potential = 0
-
-        for roll in rolls:
-            times, die = map(int, roll.split('d'))
-            roll_potential += die * times
-
-        return roll_potential
-
-    def _update_curse_data(self, total, potential):
+    def _update_curse_data(self, cursedness, num_rolls):
        curse_data = self.r.get(self.roll_key)
        if not curse_data:
-           curse_data = {'total': 0, 'potential': 0}
+           curse_data = {'total_curse': 0.0, 'total_rolls': 0}
        else:
            curse_data = json.loads(curse_data.decode('UTF-8'))
 
-       curse_data['total'] = curse_data['total'] + total
-       curse_data['potential'] = curse_data['potential'] + potential
+       curse_data['total_curse'] = curse_data['total_curse'] + cursedness
+       curse_data['total_rolls'] = curse_data['total_rolls'] + num_rolls
 
        self.r.put(self.roll_key, json.dumps(curse_data).encode('UTF-8'))
 
@@ -85,10 +69,10 @@ class RollHandler(Handler):
         curse_data = curse_data.decode('UTF-8')
 
         curse_data = json.loads(curse_data)
-        total = curse_data['total']
-        potential = curse_data['potential']
+        total_curse = curse_data['total_curse']
+        total_rolls = curse_data['total_rolls']
 
-        cursedness = total / potential
+        cursedness = total_curse / total_rolls
 
         if cursedness > .9:
             message = "The gods smile up on you."
@@ -103,7 +87,17 @@ class RollHandler(Handler):
         else:
             message = "Y'all are absolutely fucked"
 
-        return "Cursedness: `{} / {} = {}` : {}".format(total, potential, cursedness, message)
+        return "Cursedness: `{} / {} = {}` : {}".format(total_curse, total_rolls, cursedness, message)
+
+    def _get_cursedness(self, rolls, roll_results):
+        total_cursedness = 0.0
+        for idx, roll in enumerate(rolls):
+            roll_potential = int(roll.split('d')[1])
+            results_in_set = roll_results[idx]
+            for result in results_in_set:
+                print("Rolled {} / {} : Blessdness {}".format(result, roll_potential, result / roll_potential))
+                total_cursedness += (result-1) / (roll_potential-1)
+        return total_cursedness
 
     def get_roll_response(self, message):
         # Remove !roll from content
@@ -131,10 +125,10 @@ class RollHandler(Handler):
         roll_total = sum(map(sum, roll_results))
         mod_total = sum(map(int, mods))
 
-        roll_potential = self._get_roll_potential(rolls)
         total = roll_total + mod_total
 
-        self._update_curse_data(total, roll_potential)
+        cursedness = self._get_cursedness(rolls, roll_results)
+        self._update_curse_data(cursedness, sum(map(len, roll_results)))
 
         response += 'for a total of `{}`'.format(total)
 
