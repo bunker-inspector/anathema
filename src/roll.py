@@ -8,8 +8,8 @@ import re
 class CommandRegistry:
     def __init__(self, r):
         self.r = r
-        stored_commands = r.get(kv.to_key(b'commands')) or '{}'
-        self.registry = json.loads(stored_commands)
+        stored_commands = r.get(kv.to_key(b'commands')) or b'{}'
+        self.registry = json.loads(stored_commands.decode('UTF-8'))
 
 class RollHandler(Handler):
     roll_key = kv.to_key(b'roll')
@@ -55,12 +55,12 @@ class RollHandler(Handler):
        if not curse_data:
            curse_data = {'total': 0, 'potential': 0}
        else:
-           curse_data = json.loads(curse_data)
+           curse_data = json.loads(curse_data.decode('UTF-8'))
 
        curse_data['total'] = curse_data['total'] + total
        curse_data['potential'] = curse_data['potential'] + potential
 
-       self.r.set(self.roll_key, json.dumps(curse_data))
+       self.r.put(self.roll_key, json.dumps(curse_data).encode('UTF-8'))
 
     def get_response(self, message):
         if message.content.startswith('!roll'):
@@ -81,6 +81,8 @@ class RollHandler(Handler):
 
         if not curse_data:
             return 'There is not enough history to know if we are cursed.'
+
+        curse_data = curse_data.decode('UTF-8')
 
         curse_data = json.loads(curse_data)
         total = curse_data['total']

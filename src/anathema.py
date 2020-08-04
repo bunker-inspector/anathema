@@ -1,16 +1,14 @@
 import discord
 import os
-import redis
+import rocksdb
 from roll import RollHandler
 from command import CommandHandler
 
 if __name__ == '__main__':
     client = discord.Client()
 
-    redis_host = os.getenv('REDIS_HOST') or 'localhost'
-    redis_port = os.getenv('REDIS_PORT') or 6379
-    redis_db   = os.getenv('REDIS_DB') or 0
-    r = redis.Redis(host=redis_host, port=redis_port, db=redis_db)
+    rocks_db_location = os.getenv("ROCK_DB_LOCATION", "anathema.db")
+    r = rocksdb.DB(rocks_db_location, rocksdb.Options(create_if_missing=True))
 
     handlers = [RollHandler(r)]
 

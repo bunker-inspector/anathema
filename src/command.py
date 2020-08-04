@@ -46,7 +46,7 @@ class CommandHandler(Handler):
         self.commands[str(message.author.id)] = author_commands
         print(self.commands)
 
-        self.r.set(self.command_key, json.dumps(self.commands))
+        self.r.put(self.command_key, json.dumps(self.commands).encode('UTF-8'))
 
         return '{} registered command: `!{}` -> `{}`'.format(message.author.name, command_clause, command)
 
