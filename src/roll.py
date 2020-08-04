@@ -12,7 +12,7 @@ class RollHandler(Handler):
         self.r = r
 
     def accepts(self, message):
-        return (message.content.startswith('!roll ')
+        return (message.content.lower().startswith('!roll ')
         or message.content.startswith('!are-we-cursed?')
         or message.content == '!reset-curse')
 
@@ -23,7 +23,7 @@ class RollHandler(Handler):
         for match in matches:
             if re.match(r'\d+[d]\d+', match):
                 rolls.append(match)
-            elif re.match(r'\d+', match):
+            elif re.match(r'\-?\d+', match):
                 mods.append(match)
             else:
                 raise "FUCK FUCK FUCK"
@@ -47,7 +47,7 @@ class RollHandler(Handler):
        self.r.put(self.roll_key, json.dumps(curse_data).encode('UTF-8'))
 
     def get_response(self, message):
-        if message.content.startswith('!roll'):
+        if message.content.lower().startswith('!roll'):
             return self.get_roll_response(message)
         elif message.content.startswith('!are-we-cursed?'):
             return self.get_curse_query_response()
