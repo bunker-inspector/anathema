@@ -40,11 +40,10 @@ class CommandHandler(Handler):
 
         command = message.content[command_clause_end+2:].strip()
 
-        author_commands = self.commands.get(message.author.id, {})
+        author_commands = self.commands.get(str(message.author.id), {})
         author_commands[command_clause] = command
 
         self.commands[str(message.author.id)] = author_commands
-        print(self.commands)
 
         self.r.put(self.command_key, json.dumps(self.commands).encode('UTF-8'))
 
