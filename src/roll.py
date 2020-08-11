@@ -5,6 +5,9 @@ import json
 import random
 import re
 
+DIE_EXPR = r'\d+[d]\d+'
+MOD_EXPR = r'\-?\d+'
+
 class RollHandler(Handler):
     roll_key = kv.to_key(b'roll')
 
@@ -23,8 +26,8 @@ class RollHandler(Handler):
         for match in matches:
             if re.match(r'\d+[d]\d+', match):
                 rolls.append(match)
-            elif re.match(r'\-?\d+', match):
-                mods.append(match)
+            elif re.match(r'\-?\s*\d+', match):
+                mods.append(match.replace(' ', ''))
             else:
                 raise "FUCK FUCK FUCK"
         return [rolls, mods]
@@ -72,17 +75,17 @@ class RollHandler(Handler):
         total_curse = curse_data['total_curse']
         total_rolls = curse_data['total_rolls']
 
-        cursedness = total_curse / total_rolls
+        cursedness = 1.0 - (total_curse / total_rolls)
 
-        if cursedness > .9:
+        if cursedness < .1:
             message = "The gods smile up on you."
-        elif cursedness > .75:
+        elif cursedness < .25:
             message = "You are blessed."
-        elif cursedness > .6:
+        elif cursedness < .4:
             message = "You have nothing to complain about."
-        elif cursedness > .4:
+        elif cursedness < .6:
             message = "Your dice work as intended."
-        elif cursedness > .25:
+        elif cursedness < .75:
             message = "You are fairly cursed."
         else:
             message = "Y'all are absolutely fucked"
@@ -104,11 +107,11 @@ class RollHandler(Handler):
         reason = None
         split_command = [x.strip() for x in message.content[5:].split('!', 1)]
 
-        roll_clause = split_command[0]
+        roll_clause = split_command[0].replace(' ', '')
         if len(split_command) > 1:
             reason = split_command[1]
 
-        if not re.match(r'^(\d+[d]\d+|\-?\d+)(\+?(\d+[d]\d+|\-?\d+))*', roll_clause):
+        if not re.fullmatch(r'^(\d+[d]\d+|\-?\d+)(\s*\+?\s*(\d+[d]\d+|\-?\d+))*', roll_clause):
             return 'What the _fuck_ was that? Read the goddamned docs.'
 
         matches = re.findall(r'\+?(\d+[d]\d+|\-?\d+)', roll_clause)
