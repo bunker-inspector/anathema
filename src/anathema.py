@@ -12,7 +12,7 @@ if __name__ == '__main__':
 
     handlers = [RollHandler(r)]
 
-    command_handler = CommandHandler(r, handlers)
+    command_handler = CommandHandler(r, handlers.copy())
 
     handlers.append(command_handler)
 

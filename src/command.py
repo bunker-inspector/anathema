@@ -13,22 +13,44 @@ class CommandHandler(Handler):
         commands = r.get(self.command_key) or '{}'
         self.commands = json.loads(commands)
 
-    def _extract_command(self, message):
-        first_space_idx = message.content.find(' ')
-        command_end = first_space_idx if first_space_idx > 0 else len(message.content)
-        return message.content[1:command_end]
-
     def accepts(self, message):
         if message.content.startswith('!set-command'):
             return True
+        elif message.content.strip() == '!clear-commands':
+                return True
         else:
             command = self._extract_command(message)
             author_commands = self.commands.get(str(message.author.id), {})
             return bool(author_commands.get(command, False))
 
+    ## Internal Helpers
+
+    def _extract_command(self, message):
+        first_space_idx = message.content.find(' ')
+        command_end = first_space_idx if first_space_idx > 0 else len(message.content)
+        return message.content[1:command_end]
+
+    def _get_author_commands(self, author_id):
+       return self.commands.get(str(author_id), {})
+
+    def _set_author_command(self, author_id, hot_word, command):
+        author_commands = self._get_author_commands(author_id)
+        author_commands[hot_word] = command
+        self._set_author_commands(author_id, author_commands)
+
+    def _set_author_commands(self, author_id, commands):
+        self.commands[str(author_id)] = commands
+
+    def _flush_commands(self):
+        self.r.put(self.command_key, json.dumps(self.commands).encode('UTF-8'))
+
+    ## Response Handlers
+
     def get_response(self, message):
         if message.content.startswith('!set-command'):
             return self.get_set_command_response(message)
+        elif message.content.strip() == '!clear-commands':
+            return self.get_clear_command_response(message)
         else:
             return self.process_user_command(message)
 
@@ -40,14 +62,16 @@ class CommandHandler(Handler):
 
         command = message.content[command_clause_end+2:].strip()
 
-        author_commands = self.commands.get(str(message.author.id), {})
-        author_commands[command_clause] = command
-
-        self.commands[str(message.author.id)] = author_commands
-
-        self.r.put(self.command_key, json.dumps(self.commands).encode('UTF-8'))
+        self._set_author_command(message.author.id, command_clause, command)
+        self._flush_commands()
 
         return '{} registered command: `!{}` -> `{}`'.format(message.author.nick, command_clause, command)
+
+    def get_clear_command_response(self, message):
+        self.commands[str(message.author.id)] = {}
+        self._flush_commands()
+
+        return '{} has cleard all commands.'.format(message.author.nick)
 
     def process_user_command(self, message):
         command = self._extract_command(message)
