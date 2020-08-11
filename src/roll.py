@@ -7,6 +7,7 @@ import re
 
 DIE_EXPR = r'\d+[d]\d+'
 MOD_EXPR = r'\-?\d+'
+ROLL_EXPR = r'^({}|{})(\+?({}|{}))*'.format(DIE_EXPR, MOD_EXPR, DIE_EXPR, MOD_EXPR)
 
 class RollHandler(Handler):
     roll_key = kv.to_key(b'roll')
@@ -24,10 +25,10 @@ class RollHandler(Handler):
         mods = []
 
         for match in matches:
-            if re.match(r'\d+[d]\d+', match):
+            if re.match(DIE_EXPR, match):
                 rolls.append(match)
-            elif re.match(r'\-?\s*\d+', match):
-                mods.append(match.replace(' ', ''))
+            elif re.match(MOD_EXPR, match):
+                mods.append(match)
             else:
                 raise "FUCK FUCK FUCK"
         return [rolls, mods]
@@ -111,10 +112,10 @@ class RollHandler(Handler):
         if len(split_command) > 1:
             reason = split_command[1]
 
-        if not re.fullmatch(r'^(\d+[d]\d+|\-?\d+)(\s*\+?\s*(\d+[d]\d+|\-?\d+))*', roll_clause):
+        if not re.fullmatch(ROLL_EXPR, roll_clause):
             return 'What the _fuck_ was that? Read the goddamned docs.'
 
-        matches = re.findall(r'\+?(\d+[d]\d+|\-?\d+)', roll_clause)
+        matches = re.findall(r'\+?({}|{})'.format(DIE_EXPR, MOD_EXPR), roll_clause)
         rolls, mods = self._split_by_format(matches)
         roll_results = [self._roll(roll) for roll in rolls]
 
