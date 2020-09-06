@@ -44,7 +44,8 @@ class RollHandler(Handler):
             elif re.match(MOD_EXPR, match):
                 mods.append(match)
             else:
-                raise "FUCK FUCK FUCK"
+                raise "Wrong!"
+
         return [rolls, mods]
 
     ## Internal Helpers
@@ -149,8 +150,13 @@ class RollHandler(Handler):
         if not re.fullmatch(COMMAND_EXPR, roll_clause):
             return 'What the _fuck_ was that? Read the goddamned docs.'
 
-        matches = re.findall(ROLL_EXPR, roll_clause)
+
         xforms = re.findall(XFORM_EXPR, roll_clause)
+
+        roll_clause, _ = re.subn(XFORM_EXPR, '', roll_clause)
+        print(roll_clause)
+
+        matches = re.findall(ROLL_EXPR, roll_clause)
         rolls, mods = self._split_by_format(matches)
         roll_results = [self._roll(roll) for roll in rolls]
 
