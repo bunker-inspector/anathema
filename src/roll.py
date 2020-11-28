@@ -22,6 +22,20 @@ XFORM_EXPRS = [
 XFORM_EXPR = r'({})'.format('|'.join(XFORM_EXPRS))
 COMMAND_EXPR = r'{}(\s+({}*))?'.format(ROLLS_EXPR, XFORM_EXPR)
 
+THE_BLESSED = [
+            # Ted
+            346847044876501012,
+
+            # Richard
+            724143981235142749,
+
+            # Jake
+            176770487148347392,
+
+            #Elliot
+            186633996019433472
+        ]
+
 class RollHandler(Handler):
     roll_key = kv.to_key(b'roll')
 
@@ -54,6 +68,22 @@ class RollHandler(Handler):
         times, die = map(int, roll.split('d'))
 
         return [random.randint(1, die) for _ in range(times)]
+
+    def _blessed_roll(self, roll):
+        print("Praise be, a child of the light!")
+        times, die = map(int, roll.split('d'))
+
+        out = []
+        for _ in range(times):
+            roll = random.randint(1, die)
+            blessedness = float(roll-1) / float(die-1)
+            if blessedness <= 0.25:
+                print("His light shines upon thee")
+                redo = random.randint(1, die)
+                roll = redo if redo > roll else roll
+
+            out.append(roll)
+        return out
 
     def _update_curse_data(self, rolls, roll_results):
         num_rolls = sum(map(len, roll_results))
@@ -158,7 +188,9 @@ class RollHandler(Handler):
 
         matches = re.findall(ROLL_EXPR, roll_clause)
         rolls, mods = self._split_by_format(matches)
-        roll_results = [self._roll(roll) for roll in rolls]
+
+        roll_fn = self._blessed_roll if (message.author.id in THE_BLESSED) else self._roll
+        roll_results = [roll_fn(roll) for roll in rolls]
 
         self._update_curse_data(rolls, roll_results)
 

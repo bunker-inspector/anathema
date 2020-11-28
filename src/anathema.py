@@ -25,6 +25,8 @@ if __name__ == '__main__':
     @client.event
     async def on_message(message):
         print(message)
+        print(message.author)
+        print(message.author.id)
         if message.author == client.user:
             return
 
