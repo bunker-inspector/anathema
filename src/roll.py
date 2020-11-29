@@ -76,7 +76,7 @@ class RollHandler(Handler):
         out = []
         for _ in range(times):
             roll = random.randint(1, die)
-            blessedness = float(roll-1) / float(die-1)
+            blessedness = 0.5 if die == 1 else float(roll-1) / float(die-1)
             if blessedness <= 0.25:
                 print("His light shines upon thee")
                 redo = random.randint(1, die)
@@ -108,8 +108,9 @@ class RollHandler(Handler):
             roll_potential = int(roll.split('d')[1])
             results_in_set = roll_results[idx]
             for result in results_in_set:
-                print("Rolled {} / {} : Blessdness {}".format(result, roll_potential, result / roll_potential))
-                total_cursedness += (result-1) / (roll_potential-1)
+                blessedness = 0.5 if roll_potential == 1 else (result-1) / (roll_potential-1)
+                print("Rolled {} / {} : Blessedness {}".format(result, roll_potential, blessedness))
+                total_cursedness += blessedness
         return total_cursedness
 
     def _apply_xforms(self, roll_results, xform_tokens):
