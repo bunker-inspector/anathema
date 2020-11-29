@@ -76,11 +76,9 @@ class RollHandler(Handler):
         out = []
         for _ in range(times):
             roll = random.randint(1, die)
-            blessedness = 0.5 if die == 1 else float(roll-1) / float(die-1)
-            if blessedness <= 0.25:
+            if random.randint(0, 2) == 2:
                 print("His light shines upon thee")
-                redo = random.randint(1, die)
-                roll = redo if redo > roll else roll
+                roll = max(roll, random.randint(1, die))
 
             out.append(roll)
         return out
