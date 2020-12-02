@@ -2,6 +2,7 @@ from handler import Handler
 import hashlib
 import kv
 import json
+import os
 import random
 import re
 
@@ -35,6 +36,17 @@ THE_BLESSED = [
             #Elliot
             186633996019433472
         ]
+
+THE_CURSED = [
+        # Andy
+        193441292036866048
+        ]
+
+BLESS_CHANCE = int(os.getenv('BLESS_CHANCE', '75'))
+CURSE_CHANCE = int(os.getenv('CURSE_CHANCE', BLESS_CHANCE))
+
+print("Bless chance: {}".format(BLESS_CHANCE))
+print("Curse chance: {}".format(CURSE_CHANCE))
 
 class RollHandler(Handler):
     roll_key = kv.to_key(b'roll')
@@ -76,9 +88,23 @@ class RollHandler(Handler):
         out = []
         for _ in range(times):
             roll = random.randint(1, die)
-            if random.randint(0, 2) == 2:
+            if random.randint(1, 100) <= BLESS_CHANCE:
                 print("His light shines upon thee")
                 roll = max(roll, random.randint(1, die))
+
+            out.append(roll)
+        return out
+
+    def _cursed_roll(self, roll):
+        print("Avast ye, demon!")
+        times, die = map(int, roll.split('d'))
+
+        out = []
+        for _ in range(times):
+            roll = random.randint(1, die)
+            if random.randint(1, 100) <= CURSE_CHANCE:
+                print("Thy shall be felled!")
+                roll = min(roll, random.randint(1, die))
 
             out.append(roll)
         return out
@@ -188,7 +214,12 @@ class RollHandler(Handler):
         matches = re.findall(ROLL_EXPR, roll_clause)
         rolls, mods = self._split_by_format(matches)
 
-        roll_fn = self._blessed_roll if (message.author.id in THE_BLESSED) else self._roll
+        roll_fn = self._roll
+        if message.author.id in THE_CURSED:
+            roll_fn = self._cursed_roll_
+        elif message.author.id in THE_BLESSED:
+            roll_fn = self._blessed_roll
+
         roll_results = [roll_fn(roll) for roll in rolls]
 
         self._update_curse_data(rolls, roll_results)
