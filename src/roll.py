@@ -42,8 +42,8 @@ THE_CURSED = [
         193441292036866048
         ]
 
-BLESS_CHANCE = int(os.getenv('BLESS_CHANCE', '75'))
-CURSE_CHANCE = int(os.getenv('CURSE_CHANCE', BLESS_CHANCE))
+BLESS_CHANCE = int(os.getenv('BLESS_CHANCE', '50'))
+CURSE_CHANCE = int(os.getenv('CURSE_CHANCE', '25'))
 
 print("Bless chance: {}".format(BLESS_CHANCE))
 print("Curse chance: {}".format(CURSE_CHANCE))
@@ -216,7 +216,7 @@ class RollHandler(Handler):
 
         roll_fn = self._roll
         if message.author.id in THE_CURSED:
-            roll_fn = self._cursed_roll_
+            roll_fn = self._cursed_roll
         elif message.author.id in THE_BLESSED:
             roll_fn = self._blessed_roll
 
