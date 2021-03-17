@@ -5,13 +5,11 @@ import re
 
 
 class CommandHandler(Handler):
-    command_key = kv.to_key(b'commands')
-
     def __init__(self, r, handlers):
-        self.r = r
+        self.kv = kv
         self.handlers = handlers
 
-        commands = r.get(self.command_key) or '{}'
+        commands = r.get('commands') or '{}'
         self.commands = json.loads(commands)
 
     def accepts(self, message):
@@ -44,17 +42,21 @@ class CommandHandler(Handler):
         self.commands[str(author_id)] = commands
 
     def _flush_commands(self):
-        self.r.put(self.command_key, json.dumps(self.commands).encode('UTF-8'))
+        self.kv.put('commands', self.commands)
 
     # Response Handlers
 
-    def get_response(self, message):
+    async def process(self, message):
+        if not self.accepts(message):
+            return
+
         if message.content.startswith('!set-command'):
-            return self.get_set_command_response(message)
+            await message.channel.send(self.get_set_command_response(message))
         elif message.content.strip() == '!clear-commands':
-            return self.get_clear_command_response(message)
+            await message.channel.send(self.get_clear_command_response(message)
+                                       )
         else:
-            return self.process_user_command(message)
+            await self.process_user_command(message)
 
     def get_set_command_response(self, message):
         command_clause_end = message.content.find('::')
@@ -76,7 +78,7 @@ class CommandHandler(Handler):
 
         return '{} has cleard all commands.'.format(message.author.nick)
 
-    def process_user_command(self, message):
+    async def process_user_command(self, message):
         command = self._extract_command(message)
         mapping = self.commands[str(message.author.id)][command]
 
@@ -94,7 +96,4 @@ class CommandHandler(Handler):
         message.content = new_message_content
 
         for handler in self.handlers:
-            if handler.accepts(message):
-                return handler.get_response(message)
-
-        return False
+            await handler.process(message)

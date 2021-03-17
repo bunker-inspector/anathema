@@ -1,20 +1,21 @@
 import discord
 import os
-import rocksdb
 from roll import RollHandler
 from character import CharacterHandler
 from command import CommandHandler
 from inspire import InspireHandler
+from kv import KV
+from rocksdb import DB, Options
 
 if __name__ == '__main__':
     client = discord.Client()
 
     rocks_db_location = os.getenv('ROCKS_DB_LOCATION', 'anathema.db')
-    r = rocksdb.DB(rocks_db_location, rocksdb.Options(create_if_missing=True))
+    kv = KV(DB(rocks_db_location, Options(create_if_missing=True)))
 
-    handlers = [RollHandler(r), InspireHandler(), CharacterHandler(r)]
+    handlers = [RollHandler(kv), InspireHandler(), CharacterHandler(kv)]
 
-    command_handler = CommandHandler(r, handlers.copy())
+    command_handler = CommandHandler(kv, handlers.copy())
 
     handlers.append(command_handler)
 
@@ -24,16 +25,10 @@ if __name__ == '__main__':
 
     @client.event
     async def on_message(message):
-        print(message)
-        print(message.author)
-        print(message.author.id)
         if message.author == client.user:
             return
 
         for handler in handlers:
-            if handler.accepts(message):
-                response = handler.get_response(message)
-                if response:
-                    await message.channel.send(response)
+            await handler.process(message)
 
     client.run(os.getenv('DISCORD_BOT_TOKEN'))

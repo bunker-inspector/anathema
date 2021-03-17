@@ -1,8 +1,5 @@
 from handler import Handler
-import hashlib
-import kv
 import json
-import os
 import random
 import re
 
@@ -22,10 +19,8 @@ COMMAND_EXPR = r'{}(\s+({}*))?'.format(ROLLS_EXPR, XFORM_EXPR)
 
 
 class RollHandler(Handler):
-    roll_key = kv.to_key(b'roll')
-
-    def __init__(self, r, commands={}):
-        self.r = r
+    def __init__(self, kv, commands={}):
+        self.kv = kv
 
     def accepts(self, message):
         return (message.content.lower().startswith('!roll ')
@@ -47,7 +42,7 @@ class RollHandler(Handler):
 
         return [rolls, mods]
 
-    ## Internal Helpers
+    # Internal Helpers
 
     def _roll(self, roll):
         times, die = map(int, roll.split('d'))
@@ -58,7 +53,7 @@ class RollHandler(Handler):
         num_rolls = sum(map(len, roll_results))
         cursedness = self._get_cursedness(rolls, roll_results)
 
-        curse_data = self.r.get(self.roll_key)
+        curse_data = self.kv.get('roll')
 
         if not curse_data:
             curse_data = {'total_curse': 0.0, 'total_rolls': 0}
@@ -68,7 +63,7 @@ class RollHandler(Handler):
         curse_data['total_curse'] = curse_data['total_curse'] + cursedness
         curse_data['total_rolls'] = curse_data['total_rolls'] + num_rolls
 
-        self.r.put(self.roll_key, json.dumps(curse_data).encode('UTF-8'))
+        self.kv.put('roll', curse_data)
 
     def _get_cursedness(self, rolls, roll_results):
         total_cursedness = 0.0
@@ -96,29 +91,28 @@ class RollHandler(Handler):
 
     # Response Handlers
 
-    def get_response(self, message):
+    async def process(self, message):
+        if not self.accepts(message):
+            return
+
         if message.content.lower().startswith('!roll'):
-            return self.get_roll_response(message)
+            await message.channel.send(self.get_roll_response(message))
         elif message.content.startswith('!are-we-cursed?'):
-            return self.get_curse_query_response()
+            await message.channel.send(self.get_curse_query_response())
         elif message.content.strip() == '!reset-curse':
-            return self.reset_response()
-        return False
+            await message.channel.send(self.reset_response())
 
     def reset_response(self):
-        self.r.delete(self.roll_key)
+        self.kv.delete('roll')
 
         return 'Curse data reset'
 
     def get_curse_query_response(self):
-        curse_data = self.r.get(self.roll_key)
+        curse_data = self.kv.get('roll')
 
         if not curse_data:
             return 'There is not enough history to know if we are cursed.'
 
-        curse_data = curse_data.decode('UTF-8')
-
-        curse_data = json.loads(curse_data)
         total_curse = curse_data['total_curse']
         total_rolls = curse_data['total_rolls']
 
@@ -155,12 +149,11 @@ class RollHandler(Handler):
         xforms = re.findall(XFORM_EXPR, roll_clause)
 
         roll_clause, _ = re.subn(XFORM_EXPR, '', roll_clause)
-        print(roll_clause)
 
         matches = re.findall(ROLL_EXPR, roll_clause)
         rolls, mods = self._split_by_format(matches)
 
-        roll_results = [self.roll(roll) for roll in rolls]
+        roll_results = [self._roll(roll) for roll in rolls]
 
         self._update_curse_data(rolls, roll_results)
 

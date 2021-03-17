@@ -10,7 +10,10 @@ class InspireHandler(Handler):
     def accepts(self, message):
         return message.content.strip() == '!inspire'
 
-    def get_response(self, message):
+    async def process(self, message):
+        if not self.accepts(message):
+            return
+
         chapter_ct = len(self.aow['chapters'])
 
         chapter = self.aow['chapters'][random.randint(0, chapter_ct - 1)]
@@ -24,4 +27,4 @@ class InspireHandler(Handler):
 
         content = content[content.find('.') + 2:]
 
-        return 'Sun Tzu says: \n > {}'.format(content)
+        await message.channel.send('Sun Tzu says: \n > {}'.format(content))
