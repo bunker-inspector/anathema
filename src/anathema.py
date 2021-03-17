@@ -1,9 +1,9 @@
 import discord
 import os
-from roll import RollHandler
-from character import CharacterHandler
-from command import CommandHandler
-from inspire import InspireHandler
+from rollhandler import RollHandler
+from characterhandler import CharacterHandler
+from commandhandler import CommandHandler
+from inspirehandler import InspireHandler
 from kv import KV
 from rocksdb import DB, Options
 
