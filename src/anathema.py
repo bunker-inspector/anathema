@@ -2,6 +2,7 @@ import discord
 import os
 import rocksdb
 from roll import RollHandler
+from character import CharacterHandler
 from command import CommandHandler
 from inspire import InspireHandler
 
@@ -11,8 +12,7 @@ if __name__ == '__main__':
     rocks_db_location = os.getenv('ROCKS_DB_LOCATION', 'anathema.db')
     r = rocksdb.DB(rocks_db_location, rocksdb.Options(create_if_missing=True))
 
-    handlers = [RollHandler(r),
-                InspireHandler()]
+    handlers = [RollHandler(r), InspireHandler(), CharacterHandler(r)]
 
     command_handler = CommandHandler(r, handlers.copy())
 
@@ -33,6 +33,7 @@ if __name__ == '__main__':
         for handler in handlers:
             if handler.accepts(message):
                 response = handler.get_response(message)
-                if response: await message.channel.send(response)
+                if response:
+                    await message.channel.send(response)
 
     client.run(os.getenv('DISCORD_BOT_TOKEN'))

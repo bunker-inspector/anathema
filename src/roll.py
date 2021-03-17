@@ -15,38 +15,11 @@ ROLLS_EXPR = r'{}*'.format(ROLL_EXPR)
 KH_EXPR = r'kh\d+'
 KL_EXPR = r'kl\d+'
 
-XFORM_EXPRS = [
-        KH_EXPR,
-        KL_EXPR
-        ]
+XFORM_EXPRS = [KH_EXPR, KL_EXPR]
 
 XFORM_EXPR = r'({})'.format('|'.join(XFORM_EXPRS))
 COMMAND_EXPR = r'{}(\s+({}*))?'.format(ROLLS_EXPR, XFORM_EXPR)
 
-THE_BLESSED = [
-            # Ted
-            346847044876501012,
-
-            # Richard
-            724143981235142749,
-
-            # Jake
-            176770487148347392,
-
-            #Elliot
-            186633996019433472
-        ]
-
-THE_CURSED = [
-        # Andy
-        193441292036866048
-        ]
-
-BLESS_CHANCE = int(os.getenv('BLESS_CHANCE', '50'))
-CURSE_CHANCE = int(os.getenv('CURSE_CHANCE', '25'))
-
-print("Bless chance: {}".format(BLESS_CHANCE))
-print("Curse chance: {}".format(CURSE_CHANCE))
 
 class RollHandler(Handler):
     roll_key = kv.to_key(b'roll')
@@ -56,8 +29,8 @@ class RollHandler(Handler):
 
     def accepts(self, message):
         return (message.content.lower().startswith('!roll ')
-        or message.content.startswith('!are-we-cursed?')
-        or message.content == '!reset-curse')
+                or message.content.startswith('!are-we-cursed?')
+                or message.content == '!reset-curse')
 
     def _split_by_format(self, matches):
         rolls = []
@@ -81,37 +54,8 @@ class RollHandler(Handler):
 
         return [random.randint(1, die) for _ in range(times)]
 
-    def _blessed_roll(self, roll):
-        print("Praise be, a child of the light!")
-        times, die = map(int, roll.split('d'))
-
-        out = []
-        for _ in range(times):
-            roll = random.randint(1, die)
-            if random.randint(1, 100) <= BLESS_CHANCE:
-                print("His light shines upon thee")
-                roll = max(roll, random.randint(1, die))
-
-            out.append(roll)
-        return out
-
-    def _cursed_roll(self, roll):
-        print("Avast ye, demon!")
-        times, die = map(int, roll.split('d'))
-
-        out = []
-        for _ in range(times):
-            roll = random.randint(1, die)
-            if random.randint(1, 100) <= CURSE_CHANCE:
-                print("Thy shall be felled!")
-                roll = min(roll, random.randint(1, die))
-
-            out.append(roll)
-        return out
-
     def _update_curse_data(self, rolls, roll_results):
         num_rolls = sum(map(len, roll_results))
-        roll_total = sum(map(sum, roll_results))
         cursedness = self._get_cursedness(rolls, roll_results)
 
         curse_data = self.r.get(self.roll_key)
@@ -132,8 +76,10 @@ class RollHandler(Handler):
             roll_potential = int(roll.split('d')[1])
             results_in_set = roll_results[idx]
             for result in results_in_set:
-                blessedness = 0.5 if roll_potential == 1 else (result-1) / (roll_potential-1)
-                print("Rolled {} / {} : Blessedness {}".format(result, roll_potential, blessedness))
+                blessedness = 0.5 if roll_potential == 1 else (result - 1) / (
+                    roll_potential - 1)
+                print("Rolled {} / {} : Blessedness {}".format(
+                    result, roll_potential, blessedness))
                 total_cursedness += blessedness
         return total_cursedness
 
@@ -148,7 +94,7 @@ class RollHandler(Handler):
 
         return [x for x in roll_results]
 
-    ## Response Handlers
+    # Response Handlers
 
     def get_response(self, message):
         if message.content.lower().startswith('!roll'):
@@ -191,7 +137,8 @@ class RollHandler(Handler):
         else:
             message = "Y'all are absolutely fucked"
 
-        return "Cursedness: `{} / {} = {}` : {}".format(total_curse, total_rolls, cursedness, message)
+        return "Cursedness: `{} / {} = {}` : {}".format(
+            total_curse, total_rolls, cursedness, message)
 
     def get_roll_response(self, message):
         # Remove !roll from content
@@ -203,8 +150,7 @@ class RollHandler(Handler):
             reason = split_command[1]
 
         if not re.fullmatch(COMMAND_EXPR, roll_clause):
-            return 'What the _fuck_ was that? Read the goddamned docs.'
-
+            return 'Command did not conform to specs, which do not exist.'
 
         xforms = re.findall(XFORM_EXPR, roll_clause)
 
@@ -214,13 +160,7 @@ class RollHandler(Handler):
         matches = re.findall(ROLL_EXPR, roll_clause)
         rolls, mods = self._split_by_format(matches)
 
-        roll_fn = self._roll
-        if message.author.id in THE_CURSED:
-            roll_fn = self._cursed_roll
-        elif message.author.id in THE_BLESSED:
-            roll_fn = self._blessed_roll
-
-        roll_results = [roll_fn(roll) for roll in rolls]
+        roll_results = [self.roll(roll) for roll in rolls]
 
         self._update_curse_data(rolls, roll_results)
 

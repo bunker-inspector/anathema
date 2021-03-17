@@ -3,6 +3,7 @@ import kv
 import json
 import re
 
+
 class CommandHandler(Handler):
     command_key = kv.to_key(b'commands')
 
@@ -17,21 +18,22 @@ class CommandHandler(Handler):
         if message.content.startswith('!set-command'):
             return True
         elif message.content.strip() == '!clear-commands':
-                return True
+            return True
         else:
             command = self._extract_command(message)
             author_commands = self.commands.get(str(message.author.id), {})
             return bool(author_commands.get(command, False))
 
-    ## Internal Helpers
+    # Internal Helpers
 
     def _extract_command(self, message):
         first_space_idx = message.content.find(' ')
-        command_end = first_space_idx if first_space_idx > 0 else len(message.content)
+        command_end = first_space_idx if first_space_idx > 0 else len(
+            message.content)
         return message.content[1:command_end]
 
     def _get_author_commands(self, author_id):
-       return self.commands.get(str(author_id), {})
+        return self.commands.get(str(author_id), {})
 
     def _set_author_command(self, author_id, hot_word, command):
         author_commands = self._get_author_commands(author_id)
@@ -44,7 +46,7 @@ class CommandHandler(Handler):
     def _flush_commands(self):
         self.r.put(self.command_key, json.dumps(self.commands).encode('UTF-8'))
 
-    ## Response Handlers
+    # Response Handlers
 
     def get_response(self, message):
         if message.content.startswith('!set-command'):
@@ -60,12 +62,13 @@ class CommandHandler(Handler):
         if not re.match(r'[a-zA-Z0-9\-_]+', command_clause):
             return "Command can only be alphanumber characters, -, and _"
 
-        command = message.content[command_clause_end+2:].strip()
+        command = message.content[command_clause_end + 2:].strip()
 
         self._set_author_command(message.author.id, command_clause, command)
         self._flush_commands()
 
-        return '{} registered command: `!{}` -> `{}`'.format(message.author.nick, command_clause, command)
+        return '{} registered command: `!{}` -> `{}`'.format(
+            message.author.nick, command_clause, command)
 
     def get_clear_command_response(self, message):
         self.commands[str(message.author.id)] = {}
@@ -95,4 +98,3 @@ class CommandHandler(Handler):
                 return handler.get_response(message)
 
         return False
-
