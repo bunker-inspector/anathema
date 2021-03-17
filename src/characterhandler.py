@@ -1,7 +1,8 @@
 from handler import Handler
+from roll import Roll, DiceRoll, Modifier
 import json
 
-PROFICIENCIES = {
+SKILLS = {
     'perception': 'wis',
     'fortitude': 'con',
     'reflex': 'dex',
@@ -34,6 +35,8 @@ class CharacterHandler(Handler):
             await self._process_character_set(message)
         elif self.is_character_me(message):
             await self._process_character_me(message)
+        elif self.is_roll_character(message):
+            await self._process_roll_character(message)
 
     def _char_key(self, message):
         return 'character-{}'.format(message.author.id)
@@ -50,6 +53,9 @@ class CharacterHandler(Handler):
     def is_character_me(self, message):
         return message.content.strip() == '!char me'
 
+    def is_roll_character(self, message):
+        return message.content.strip().startswith('!rollc ')
+
     async def _process_character_me(self, message):
         c = self.kv.get(self._char_key(message))
         res = "{}: Level {} {} {}".format(c['name'], c['level'], c['ancestry'],
@@ -63,3 +69,36 @@ class CharacterHandler(Handler):
 
         await message.channel.send('"{}" has been uploaded.'.format(
             character_data['name']))
+
+    async def _process_roll_character(self, message):
+        c = self.kv.get(self._char_key(message))
+        if not c:
+            await message.channel.send('You have not uploaded your character.')
+            return
+
+        tokens = message.content.strip().lower().split()[1:]
+        skill = tokens[0]
+        modifying_ability = SKILLS.get(skill, None)
+        if not modifying_ability:
+            await message.channel.send('{} is not supported.'.format(skill))
+            return
+        ability = c['abilities'][modifying_ability]
+        ability_modifier = (ability - 10) // 2
+        proficiency = c['proficiencies'][skill]
+        level = c['level']
+
+        base_modifier = ability_modifier + proficiency + level
+
+        extra_mods = [Modifier(m) for m in map(int, tokens[1:])]
+
+        rolls = [DiceRoll(1, 20), Modifier(base_modifier)]
+        rolls.extend(extra_mods)
+
+        r = Roll(rolls)
+        results, total = r.get()
+
+        msg = "{} rolled `{}` for a total of `{}`".format(
+            message.author.nick, ' + '.join(map(str, results)), total)
+        msg += ": {}".format(skill)
+
+        await message.channel.send(msg)

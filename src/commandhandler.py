@@ -9,8 +9,8 @@ class CommandHandler(Handler):
         self.kv = kv
         self.handlers = handlers
 
-        commands = kv.get('commands') or '{}'
-        self.commands = json.loads(commands)
+        commands = kv.get('commands') or {}
+        self.commands = commands
 
     def accepts(self, message):
         if message.content.startswith('!set-command'):

@@ -117,7 +117,7 @@ class Roll():
     def __init__(
         self,
         roll_comps,
-        xforms,
+        xforms=[],
     ):
         self._roll_comps = roll_comps
         self._xforms = xforms
@@ -148,7 +148,6 @@ class Roll():
         return Roll(roll_comps, xforms)
 
     def _roll(self):
-        results = []
         for roll_comp in self._roll_comps:
             result = roll_comp.results()
             for xform in self._xforms:
