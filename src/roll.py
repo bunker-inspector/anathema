@@ -2,6 +2,7 @@ from handler import Handler
 import hashlib
 import kv
 import json
+import os
 import random
 import re
 
@@ -21,6 +22,31 @@ XFORM_EXPRS = [
 
 XFORM_EXPR = r'({})'.format('|'.join(XFORM_EXPRS))
 COMMAND_EXPR = r'{}(\s+({}*))?'.format(ROLLS_EXPR, XFORM_EXPR)
+
+THE_BLESSED = [
+            # Ted
+            346847044876501012,
+
+            # Richard
+            724143981235142749,
+
+            # Jake
+            176770487148347392,
+
+            #Elliot
+            186633996019433472
+        ]
+
+THE_CURSED = [
+        # Andy
+        193441292036866048
+        ]
+
+BLESS_CHANCE = int(os.getenv('BLESS_CHANCE', '50'))
+CURSE_CHANCE = int(os.getenv('CURSE_CHANCE', '25'))
+
+print("Bless chance: {}".format(BLESS_CHANCE))
+print("Curse chance: {}".format(CURSE_CHANCE))
 
 class RollHandler(Handler):
     roll_key = kv.to_key(b'roll')
@@ -55,6 +81,34 @@ class RollHandler(Handler):
 
         return [random.randint(1, die) for _ in range(times)]
 
+    def _blessed_roll(self, roll):
+        print("Praise be, a child of the light!")
+        times, die = map(int, roll.split('d'))
+
+        out = []
+        for _ in range(times):
+            roll = random.randint(1, die)
+            if random.randint(1, 100) <= BLESS_CHANCE:
+                print("His light shines upon thee")
+                roll = max(roll, random.randint(1, die))
+
+            out.append(roll)
+        return out
+
+    def _cursed_roll(self, roll):
+        print("Avast ye, demon!")
+        times, die = map(int, roll.split('d'))
+
+        out = []
+        for _ in range(times):
+            roll = random.randint(1, die)
+            if random.randint(1, 100) <= CURSE_CHANCE:
+                print("Thy shall be felled!")
+                roll = min(roll, random.randint(1, die))
+
+            out.append(roll)
+        return out
+
     def _update_curse_data(self, rolls, roll_results):
         num_rolls = sum(map(len, roll_results))
         roll_total = sum(map(sum, roll_results))
@@ -78,8 +132,9 @@ class RollHandler(Handler):
             roll_potential = int(roll.split('d')[1])
             results_in_set = roll_results[idx]
             for result in results_in_set:
-                print("Rolled {} / {} : Blessdness {}".format(result, roll_potential, result / roll_potential))
-                total_cursedness += (result-1) / (roll_potential-1)
+                blessedness = 0.5 if roll_potential == 1 else (result-1) / (roll_potential-1)
+                print("Rolled {} / {} : Blessedness {}".format(result, roll_potential, blessedness))
+                total_cursedness += blessedness
         return total_cursedness
 
     def _apply_xforms(self, roll_results, xform_tokens):
@@ -158,7 +213,14 @@ class RollHandler(Handler):
 
         matches = re.findall(ROLL_EXPR, roll_clause)
         rolls, mods = self._split_by_format(matches)
-        roll_results = [self._roll(roll) for roll in rolls]
+
+        roll_fn = self._roll
+        if message.author.id in THE_CURSED:
+            roll_fn = self._cursed_roll
+        elif message.author.id in THE_BLESSED:
+            roll_fn = self._blessed_roll
+
+        roll_results = [roll_fn(roll) for roll in rolls]
 
         self._update_curse_data(rolls, roll_results)
 

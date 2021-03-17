@@ -78,10 +78,17 @@ class CommandHandler(Handler):
         mapping = self.commands[str(message.author.id)][command]
 
         command_input = message.content.strip()
-        args = command_input[command_input.find(' '):].strip()
 
-        new_message = mapping.replace('{}', args, 1)
-        message.content = new_message
+        seperator_idx = command_input.find(' ')
+
+        args = None
+        if seperator_idx > 0:
+            args = command_input[seperator_idx:].strip()
+        else:
+            args = 'Reasons!'
+
+        new_message_content = mapping.replace('{}', args, 1)
+        message.content = new_message_content
 
         for handler in self.handlers:
             if handler.accepts(message):
