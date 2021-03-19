@@ -1,25 +1,33 @@
-import hashlib
+"""
+Provides persistent storage facade
+"""
+
 import json
+import hashlib
 
 
 class KV():
+    """Key value storage interface"""
     ENCODING = 'utf-8'
 
-    def __init__(this, backend):
-        this.backend = backend
+    def __init__(self, backend):
+        self.backend = backend
 
-    def _to_key(self, v):
-        return hashlib.md5(bytes(v, self.ENCODING)).digest()
+    def _to_key(self, val):
+        return hashlib.md5(bytes(val, self.ENCODING)).digest()
 
     def delete(self, key: str):
+        "Clears key"
         self.backend.delete(self._to_key(key))
 
     def get(self, key: str):
-        v = self.backend.get(self._to_key(key))
-        if not v:
+        "Retrieves key"
+        val = self.backend.get(self._to_key(key))
+        if not val:
             return None
-        return json.loads(v.decode('utf-8'))
+        return json.loads(val.decode('utf-8'))
 
     def put(self, key: str, val: str):
+        """Stores value at key"""
         self.backend.put(self._to_key(key),
                          bytes(json.dumps(val), self.ENCODING))

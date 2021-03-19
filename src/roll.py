@@ -1,3 +1,7 @@
+"""
+Here's where the money's made baby
+"""
+
 import random
 import re
 
@@ -20,20 +24,28 @@ ROLL_EXPR = r'{}{}(\s+{}\s*)*'.format(ROLL_COMP_EXPR, ROLL_COMPS_EXPR,
 
 
 class RollComponent():
+    """
+    Models either a dice roll or constant modifier
+    """
     def value(self):
-        return None
+        """Returns value of component"""
 
     def results(self):
-        return None
+        """Gets raw value of component"""
 
+    @staticmethod
     def from_expr(expr: str):
+        """Factory method that takes a roll expression"""
+        res = None
         if re.match(DIE_EXPR, expr[1:]):
-            return DiceRoll.from_expr(expr)
+            res = DiceRoll.from_expr(expr)
         elif re.match(MOD_EXPR, expr[1:]):
-            return Modifier.from_expr(expr)
+            res = Modifier.from_expr(expr)
+        return res
 
 
 class DiceRoll(RollComponent):
+    """Models a roll component"""
     def __init__(self, num: int, sides: int, negative=False):
         self._num = num
         self._sides = sides
@@ -52,6 +64,7 @@ class DiceRoll(RollComponent):
     def results(self):
         return self._results
 
+    @staticmethod
     def from_expr(expr: str):
         negative = expr[0] == '-'
         expr = expr[1:]
@@ -61,71 +74,86 @@ class DiceRoll(RollComponent):
 
 
 class Modifier(RollComponent):
-    def __init__(self, v: int):
-        self.v = v
+    """Models constant modifiers"""
+    def __init__(self, val: int):
+        self.val = val
 
     def results(self):
-        return self.v
+        return self.val
 
     def value(self):
-        return self.v
+        return self.val
 
+    @staticmethod
     def from_expr(expr: str):
+        """Factory method that takes a modifier expression"""
         return Modifier(int(expr))
 
 
 class Transform():
-    def apply(self, pre_results):
-        pass
+    """Models result transforms"""
+    def apply(self, comp: RollComponent):
+        """Applies transform"""
 
+    @staticmethod
     def from_expr(expr: str):
+        """Factory method that takes a transform expression"""
+        res = None
         if re.match(KH_EXPR, expr):
-            return KeepHighestTransform.from_expr(expr)
+            res = KeepHighestTransform.from_expr(expr)
         elif re.match(KL_EXPR, expr):
-            return KeepLowestTransform.from_expr(expr)
+            res = KeepLowestTransform.from_expr(expr)
+        return res
 
 
 class KeepHighestTransform(Transform):
+    """Keeps maximum values in roll"""
     def __init__(self, num):
         self._num = num
 
-    def apply(self, x: RollComponent):
-        if type(x) is list:
-            return sorted(x, reverse=True)[:self._num]
-        else:
-            return x
+    def apply(self, comp: RollComponent):
+        """Applies transform"""
+        if isinstance(comp, list):
+            return sorted(comp, reverse=True)[:self._num]
+        return comp
 
+    @staticmethod
     def from_expr(expr: str):
         return KeepHighestTransform(int(expr[2:]))
 
 
 class KeepLowestTransform(Transform):
+    """Keeps minimum values in roll"""
     def __init__(self, num):
         self._num = num
 
-    def apply(self, x: RollComponent):
-        if type(x) is list:
-            return sorted(x)[:self._num]
-        else:
-            return x
+    def apply(self, comp: RollComponent):
+        """Applies transform"""
+        if isinstance(comp, list):
+            return sorted(comp)[:self._num]
+        return comp
 
+    @staticmethod
     def from_expr(expr: str):
         return KeepLowestTransform(int(expr[2:]))
 
 
 class Roll():
+    """Models entire roll"""
     def __init__(
         self,
         roll_comps,
-        xforms=[],
+        xforms=None,
     ):
         self._roll_comps = roll_comps
-        self._xforms = xforms
+        self._xforms = xforms or []
         self._results = []
         self._total = 0
         self._roll()
 
+    @staticmethod
     def from_expr(expr: str):
+        """Factory method that takes roll expression"""
         expr = expr.strip()
 
         if not re.fullmatch(ROLL_EXPR, expr):
@@ -138,12 +166,12 @@ class Roll():
             split_idx = match.start()
             roll_clause = '+' + expr[:split_idx].strip().replace(' ', '')
             xform_tokens = expr[split_idx:].strip().split()
-            xforms = [x for x in map(Transform.from_expr, xform_tokens)]
+            xforms = list(map(Transform.from_expr, xform_tokens))
         else:
             roll_clause = '+' + expr.strip().replace(' ', '')
 
         tokens = re.findall(POS_ROLL_COMP_EXPR, roll_clause)
-        roll_comps = [x for x in map(RollComponent.from_expr, tokens)]
+        roll_comps = list(map(RollComponent.from_expr, tokens))
 
         return Roll(roll_comps, xforms)
 
@@ -152,7 +180,7 @@ class Roll():
             result = roll_comp.results()
             for xform in self._xforms:
                 result = xform.apply(result)
-            if type(result) is list:
+            if isinstance(result, list):
                 self._results.append(sorted(result))
                 self._total += sum(result)
             else:
@@ -160,4 +188,5 @@ class Roll():
                 self._total += result
 
     def get(self):
+        """Gets rol result"""
         return (self._results, self._total)

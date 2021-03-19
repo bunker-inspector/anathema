@@ -1,9 +1,14 @@
+"""
+Slathers the button on the bread
+"""
+
 from handler import Handler
 from roll import Roll
 
 
 class RollHandler(Handler):
-    def __init__(self, kv, commands={}):
+    """Returns like 99% of responses I promise"""
+    def __init__(self, kv):
         self.kv = kv
 
     def accepts(self, message):
@@ -18,6 +23,7 @@ class RollHandler(Handler):
             await message.channel.send(self.get_roll_response(message))
 
     def get_roll_response(self, message):
+        """Creates rolls response text"""
         # Remove !roll from content
         reason = None
         split_command = [x.strip() for x in message.content[5:].split('!', 1)]
