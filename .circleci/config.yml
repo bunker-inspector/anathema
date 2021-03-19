@@ -41,9 +41,6 @@ jobs:
             pip install --upgrade pip
             pip install pylint
             pip install yapf
-
-            which yapf
-            yapf --help
       - *save_repo
 
   check_fmt:
@@ -59,11 +56,13 @@ jobs:
       - run: pylint src --exit-zero
 
   deploy:
-    <<: *default_config
+    docker:
+      - image: cimg/base:2021.03
     steps:
       - run: |
+          mkdir -p ~/.ssh
           ssh-keyscan -H $DEPLOY_HOST >> ~/.ssh/known_hosts
-          ssh $DEPLOY_HOST "supervisorctl restart anathema"
+          ssh $DEPLOY_USER@$DEPLOY_HOST "supervisorctl restart anathema"
 
 workflows:
   main:
@@ -76,6 +75,9 @@ workflows:
            requires:
              - install
       - deploy:
+          requires:
+            - check_fmt
+            - lint
           filters:
             branches:
               only: master
