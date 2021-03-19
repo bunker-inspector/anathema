@@ -53,7 +53,7 @@ jobs:
     <<: *default_config
     steps:
       - restore
-      - run: pylint src --exit-zero
+      - run: pylint src --fail-under=10
 
   deploy:
     docker:
