@@ -63,7 +63,7 @@ jobs:
     steps:
       - run: |
           ssh-keyscan -H $DEPLOY_HOST >> ~/.ssh/known_hosts
-          ssh $DEPLOY_HOST "sudo service supervisor restart anathema"
+          ssh $DEPLOY_HOST "supervisorctl restart anathema"
 
 workflows:
   main:
