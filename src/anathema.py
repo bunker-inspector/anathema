@@ -1,11 +1,15 @@
-import discord
+"""
+Entrypoint
+"""
+
 import os
-from rollhandler import RollHandler
+import discord
+from rocksdb import DB, Options
 from characterhandler import CharacterHandler
 from commandhandler import CommandHandler
 from inspirehandler import InspireHandler
 from kv import KV
-from rocksdb import DB, Options
+from rollhandler import RollHandler
 
 if __name__ == '__main__':
     client = discord.Client()
@@ -21,10 +25,12 @@ if __name__ == '__main__':
 
     @client.event
     async def on_ready():
+        """Handles bot start"""
         print('We have logged in as {0.user}'.format(client))
 
     @client.event
     async def on_message(message):
+        """Entry point for all message handling"""
         if message.author == client.user:
             return
 

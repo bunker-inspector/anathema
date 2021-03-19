@@ -1,9 +1,14 @@
-from handler import Handler
+"""
+Provides motivation
+"""
+
 import json
 import random
+from handler import Handler
 
 
 class InspireHandler(Handler):
+    """Handles inspiration"""
     def __init__(self):
         self.aow = json.loads(open('aow.json', 'r').read())
 

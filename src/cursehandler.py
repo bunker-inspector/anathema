@@ -1,8 +1,15 @@
-from handler import Handler
+"""
+Tracks user roll statistics
+
+'Cursedness' is just the sum of (1 - (amount rolled / potential))
+"""
+
 from curse import CurseManager
+from handler import Handler
 
 
 class CurseHandler(Handler):
+    """Handles roll statistics query commands"""
     def __init__(self, c: CurseManager):
         self.c = c
 
@@ -13,6 +20,8 @@ class CurseHandler(Handler):
             await message.channel.send(self.reset_response())
 
     def get_curse_query_response(self):
+        """Returns message text for cursedness query command"""
+
         cursedness = self.c.get_cursedness()
 
         if not cursedness:
@@ -34,5 +43,6 @@ class CurseHandler(Handler):
         return "Cursedness level is {}` : {}".format(cursedness, message)
 
     def reset_response(self):
+        """Resets curse data and returns message stating so"""
         self.c.purify()
         return "The curse has been lifted."
