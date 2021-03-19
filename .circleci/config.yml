@@ -1,0 +1,81 @@
+version: 2.1
+
+references:
+  base_image: &base_image
+    cimg/python:3.9.0
+
+  repo_cache_key: &repo_cache_key
+    repo-{{ .Branch }}-{{ .Revision }}-{{ .Environment.CACHE_KEY }}
+
+  working_directory: &working_directory
+    /home/circleci/project
+
+  default_config: &default_config
+    docker:
+      - image: *base_image
+    working_directory: *working_directory
+
+  restore_repo: &restore_repo
+    restore_cache:
+      key: *repo_cache_key
+
+  save_repo: &save_repo
+    save_cache:
+      key: *repo_cache_key
+      paths:
+        - /home/circleci/
+        - /home/.pyenv
+
+commands:
+  restore:
+    steps:
+      - checkout
+      - *restore_repo
+
+jobs:
+  install:
+    <<: *default_config
+    steps:
+      - run:
+          command: |
+            pip install --upgrade pip
+            pip install pylint
+            pip install yapf
+
+            which yapf
+            yapf --help
+      - *save_repo
+
+  check_fmt:
+    <<: *default_config
+    steps:
+      - restore
+      - run: yapf . --recursive --quiet
+
+  lint:
+    <<: *default_config
+    steps:
+      - restore
+      - run: pylint src --exit-zero
+
+  deploy:
+    <<: *default_config
+    steps:
+      - run: |
+          ssh-keyscan -H $DEPLOY_HOST >> ~/.ssh/known_hosts
+          ssh $DEPLOY_HOST "sudo service supervisor restart anathema"
+
+workflows:
+  main:
+    jobs:
+      - install
+      - check_fmt:
+          requires:
+            - install
+      - lint:
+           requires:
+             - install
+      - deploy:
+          filters:
+            branches:
+              only: master
