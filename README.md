@@ -1,6 +1,8 @@
 # anathema
 Dice roller for tabletop games with some specific leanings towards Pathfinder 2e.
 
+[![anathema](https://circleci.com/gh/bunker-inspector/anathema.svg?style=svg)](https://app.circleci.com/pipelines/github/bunker-inspector/anathema)
+
 Make sure you have RocksDB installed wherever you plan to run this and isntall everything else from `requirements.txt`. Set the `DISCORD_BOT_TOKEN` with your bot's access token and run from the entrypoint at `src/anathema.py`
 
 Maybe I should make a copywrite disclaimer about Sun Tzu's _The Art of War_ but I imagine it's in public domain by now? If you are a lawyer, feel free to open an issue I suppose.
