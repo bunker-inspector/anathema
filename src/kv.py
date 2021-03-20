@@ -16,6 +16,10 @@ class KV():
     def _to_key(self, val):
         return hashlib.md5(bytes(val, self.ENCODING)).digest()
 
+    def close(self, ):
+        """Closes the backend storage handle"""
+        self.backend.close()
+
     def delete(self, key: str):
         "Clears key"
         self.backend.delete(self._to_key(key))

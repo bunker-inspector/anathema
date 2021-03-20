@@ -1,7 +1,5 @@
 #! /bin/bash
 
-git checkout master |:
-git pull
+git reset --hard origin/master
 pip install -r requirements.txt
-whoami
 python src/anathema.py

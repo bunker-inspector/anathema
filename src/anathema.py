@@ -37,4 +37,8 @@ if __name__ == '__main__':
         for handler in handlers:
             await handler.process(message)
 
-    client.run(os.getenv('DISCORD_BOT_TOKEN'))
+    try:
+        client.run(os.getenv('DISCORD_BOT_TOKEN'))
+    finally:
+        client.close()
+        kv.close()
