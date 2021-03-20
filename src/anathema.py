@@ -7,6 +7,7 @@ import discord
 from rocksdb import DB, Options
 from characterhandler import CharacterHandler
 from commandhandler import CommandHandler
+from conditionhandler import ConditionHandler
 from inspirehandler import InspireHandler
 from kv import KV
 from rollhandler import RollHandler
@@ -17,7 +18,12 @@ if __name__ == '__main__':
     rocks_db_location = os.getenv('ROCKS_DB_LOCATION', 'anathema.db')
     kv = KV(DB(rocks_db_location, Options(create_if_missing=True)))
 
-    handlers = [RollHandler(kv), InspireHandler(), CharacterHandler(kv)]
+    handlers = [
+        RollHandler(kv),
+        InspireHandler(),
+        CharacterHandler(kv),
+        ConditionHandler()
+    ]
 
     command_handler = CommandHandler(kv, handlers.copy())
 
@@ -37,8 +43,4 @@ if __name__ == '__main__':
         for handler in handlers:
             await handler.process(message)
 
-    try:
-        client.run(os.getenv('DISCORD_BOT_TOKEN'))
-    finally:
-        client.close()
-        kv.close()
+    client.run(os.getenv('DISCORD_BOT_TOKEN'))
