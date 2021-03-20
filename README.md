@@ -7,7 +7,7 @@ Make sure you have RocksDB installed wherever you plan to run this and isntall e
 
 Maybe I should make a copywrite disclaimer about Sun Tzu's _The Art of War_ but I imagine it's in public domain by now? If you are a lawyer, feel free to open an issue I suppose.
 
-Generall follows the same syntax as Dice Maiden
+Generally follows the same syntax as Dice Maiden
 `!roll [DIE_EXPR|MOD_EXPR] [+|-] DIE_EXPR|MOD_EXPR] ...  [XFORM_EXPR] ! <reason>`
 Where: 
 `DIE_EXPR` is `XdX`, e.g. `1d20`,`2d6`
