@@ -31,6 +31,7 @@ class RollHandler(Handler):
         if len(split_command) > 1:
             reason = split_command[1]
 
+        print(split_command)
         roll = Roll.from_expr(split_command[0])
         if not roll:
             return "Did not conform to spec: Check the docs, which there are none of."

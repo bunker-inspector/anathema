@@ -10,8 +10,8 @@ from handler import Handler
 
 class CurseHandler(Handler):
     """Handles roll statistics query commands"""
-    def __init__(self, c: CurseManager):
-        self.c = c
+    def __init__(self, manager: CurseManager):
+        self.manager = manager
 
     async def process(self, message):
         if message.content.sptrip() == '!are-we-cursed':
@@ -22,7 +22,7 @@ class CurseHandler(Handler):
     def get_curse_query_response(self):
         """Returns message text for cursedness query command"""
 
-        cursedness = self.c.get_cursedness()
+        cursedness = self.manager.get_cursedness()
 
         if not cursedness:
             return "There is not enough information to determine if you are cursed."
@@ -44,5 +44,5 @@ class CurseHandler(Handler):
 
     def reset_response(self):
         """Resets curse data and returns message stating so"""
-        self.c.purify()
+        self.manager.purify()
         return "The curse has been lifted."

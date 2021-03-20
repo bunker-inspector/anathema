@@ -1,18 +1,23 @@
-import json
+"""
+Utilities for tracking roll statistics.
+"""
+
 from kv import KV
+
+KEY = 'curse'
 
 
 def CurseManager():
-    KEY = 'curse'
-
-    def __init__(self, kv: KV):
-        self.kv = kv
+    """Entity that will track statistics when given roll outcomes"""
+    def __init__(self, storage: KV):
+        self.storage = storage
 
     def get_cursedness(self):
-        curse_data = self.kv.get('roll')
+        """Returns the roll average vs potential"""
+        curse_data = self.storage.get('roll')
 
         if not curse_data:
-            None
+            return None
 
         total_curse = curse_data['total_curse']
         total_rolls = curse_data['total_rolls']
@@ -20,10 +25,11 @@ def CurseManager():
         return 1.0 - (total_curse / total_rolls)
 
     def update_curse(self, rolls, results):
+        """Updates curse value with given roll results"""
         num_rolls = sum(map(len, results))
-        cursedness = self._get_cursedness(rolls, results)
+        cursedness = self.get_cursedness(rolls, results)
 
-        curse_data = self.kv.get(KEY)
+        curse_data = self.storage.get(KEY)
 
         if not curse_data:
             curse_data = {'total_curse': 0.0, 'total_rolls': 0}
@@ -31,12 +37,14 @@ def CurseManager():
         curse_data['total_curse'] = curse_data['total_curse'] + cursedness
         curse_data['total_rolls'] = curse_data['total_rolls'] + num_rolls
 
-        self.kv.put(KEY, curse_data)
+        self.storage.put(KEY, curse_data)
 
     def purify(self):
-        self.kv.delete(KEY)
+        """Clears curse"""
+        self.storage.delete(KEY)
 
-    def _calculate_cursedness(self, rolls, results):
+    def _calculate_cursedness(rolls):
+        """Calculates the cursedness of a single roll outcome"""
         total_cursedness = 0.0
         for idx, roll in enumerate(rolls):
             roll_potential = int(roll.split('d')[1])
